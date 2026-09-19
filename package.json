@@ -1,0 +1,17 @@
+{
+  "name": "primeranota",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Primera Nota - juego personal de adivinar canciones por sus primeros segundos, con canciones importadas de YouTube/TikTok",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

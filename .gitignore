@@ -1,0 +1,6 @@
+node_modules/
+data/audio/
+data/clips/
+data/library.json
+*.log
+.DS_Store

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primera Nota</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>🎵 Primera Nota</h1>
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="jugar">Jugar</button>
+    <button class="tab-btn" data-view="biblioteca">Biblioteca</button>
+    <button class="tab-btn" data-view="playlists">Playlists</button>
+    <button class="tab-btn" data-view="ajustes">Ajustes</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ===== JUGAR ===== -->
+  <section id="view-jugar" class="view active">
+    <div class="game-toolbar">
+      <select id="playlist-select"></select>
+      <button id="btn-new-game" class="btn primary">Nueva canción</button>
+    </div>
+
+    <div id="game-empty" class="card muted">
+      Elegí una playlist y tocá "Nueva canción" para empezar.
+    </div>
+
+    <div id="game-card" class="card hidden">
+      <div class="attempts-row" id="attempts-row"></div>
+
+      <div class="play-area">
+        <button id="btn-play" class="play-btn" title="Reproducir fragmento">▶</button>
+        <div class="play-info">
+          <span id="current-duration">1s</span>
+          <span class="muted">intento <span id="current-attempt">1</span>/<span id="max-attempts">6</span></span>
+        </div>
+      </div>
+      <audio id="audio-player"></audio>
+
+      <form id="guess-form" class="guess-form" autocomplete="off">
+        <div class="autocomplete-wrap">
+          <input id="guess-input" type="text" placeholder="Título de la canción..." autocomplete="off">
+          <div id="autocomplete-list" class="autocomplete-list hidden"></div>
+        </div>
+        <button type="submit" class="btn primary">Adivinar</button>
+      </form>
+      <div class="game-actions">
+        <button id="btn-skip" class="btn">Saltar ⏭</button>
+        <button id="btn-giveup" class="btn danger">Rendirse</button>
+      </div>
+
+      <ul id="guess-history" class="guess-history"></ul>
+    </div>
+
+    <div id="reveal-card" class="card reveal-card hidden">
+      <img id="reveal-thumb" alt="" />
+      <div class="reveal-info">
+        <div id="reveal-result" class="reveal-result"></div>
+        <div id="reveal-title" class="reveal-title"></div>
+        <div id="reveal-artist" class="muted"></div>
+        <a id="reveal-link" href="#" target="_blank" rel="noopener">Ver original ↗</a>
+      </div>
+      <button id="btn-again" class="btn primary">Jugar otra</button>
+    </div>
+  </section>
+
+  <!-- ===== BIBLIOTECA ===== -->
+  <section id="view-biblioteca" class="view">
+    <div class="card">
+      <h2>Agregar canción</h2>
+      <form id="import-form" class="import-form">
+        <input id="import-url" type="url" placeholder="Pegá un link de YouTube o TikTok" required>
+        <div class="row">
+          <input id="import-title" type="text" placeholder="Título (opcional)">
+          <input id="import-artist" type="text" placeholder="Artista (opcional)">
+        </div>
+        <div id="import-playlists" class="chip-select"></div>
+        <button type="submit" class="btn primary">Agregar canción</button>
+      </form>
+      <div id="import-status" class="import-status"></div>
+    </div>
+
+    <div class="card">
+      <h2>Tu biblioteca</h2>
+      <div id="song-list" class="song-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== PLAYLISTS ===== -->
+  <section id="view-playlists" class="view">
+    <div class="card">
+      <h2>Nueva playlist</h2>
+      <form id="playlist-form" class="row">
+        <input id="playlist-name" type="text" placeholder="Nombre de la playlist" required>
+        <button type="submit" class="btn primary">Crear</button>
+      </form>
+    </div>
+    <div id="playlist-list" class="playlist-list"></div>
+  </section>
+
+  <!-- ===== AJUSTES ===== -->
+  <section id="view-ajustes" class="view">
+    <div class="card">
+      <h2>Duración de los fragmentos</h2>
+      <p class="muted">Segundos de audio para cada intento, separados por coma. El juego clásico usa 1, 2, 4, 7, 11, 16.</p>
+      <form id="settings-form" class="row">
+        <input id="settings-durations" type="text" placeholder="1,2,4,7,11,16">
+        <button type="submit" class="btn primary">Guardar</button>
+      </form>
+      <div id="settings-status" class="muted"></div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
