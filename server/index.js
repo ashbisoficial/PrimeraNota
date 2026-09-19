@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
+const cors = require('cors');
 
 const store = require('./lib/store');
 const jobs = require('./lib/jobs');
@@ -11,9 +12,24 @@ const { normalize } = require('./lib/match');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const API_KEY = process.env.API_KEY || '';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 
+app.use(cors({ origin: ALLOWED_ORIGIN }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// No-auth health check, used by the frontend to test a backend connection
+// and by hosting platforms for liveness probes.
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// When API_KEY is set (recommended for any publicly reachable deployment,
+// e.g. behind a GitHub Pages frontend), every other /api route requires it.
+app.use('/api', (req, res, next) => {
+  if (!API_KEY) return next();
+  if (req.header('x-api-key') === API_KEY) return next();
+  res.status(401).json({ error: 'Falta o es inválida la API key (header x-api-key).' });
+});
 
 function wrap(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);

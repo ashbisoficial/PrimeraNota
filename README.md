@@ -59,3 +59,74 @@ Todo se guarda localmente en `data/`:
 
 Esa carpeta está en `.gitignore` porque es contenido personal/descargado, no
 código fuente.
+
+## Desplegar: frontend en GitHub Pages + backend aparte
+
+GitHub Pages solo sirve archivos estáticos: no puede ejecutar Node, `ffmpeg`
+ni `yt-dlp`. Por eso el despliegue se divide en dos partes.
+
+> **Sobre lo público que queda:** GitHub Pages y la URL del backend son
+> accesibles por cualquiera que las conozca. Configurá siempre `API_KEY` en
+> el backend antes de exponerlo — sin eso, cualquiera con la URL podría usar
+> tu servidor para descargar audio.
+
+### 1. Backend (Node + ffmpeg + yt-dlp) en un host con Docker
+
+El repo incluye un `Dockerfile` listo para Render, Railway, Fly.io, Google
+Cloud Run o cualquier host que acepte contenedores.
+
+Variables de entorno a configurar en el host:
+
+| Variable         | Para qué sirve                                                        |
+|------------------|------------------------------------------------------------------------|
+| `API_KEY`        | Contraseña que va a pedir para cada request (obligatoria si es público) |
+| `ALLOWED_ORIGIN` | La URL exacta de tu GitHub Pages (ej. `https://usuario.github.io`)     |
+| `DATA_DIR`       | Dónde guardar `library.json`/audio; apuntalo a un volumen persistente  |
+| `PORT`           | Puerto (la mayoría de los hosts lo setean solos)                      |
+
+⚠️ **Almacenamiento persistente**: la mayoría de los planes gratuitos de
+Render/Railway tienen filesystem efímero (se borra en cada redeploy). Si
+querés que tu biblioteca de canciones sobreviva, necesitás un disco/volumen
+persistente montado en `DATA_DIR` (por eso `fly.toml` incluye un ejemplo de
+volumen para Fly.io). Sin eso, tenés que re-importar las canciones después
+de cada redeploy.
+
+Ejemplo genérico con Docker:
+
+```bash
+docker build -t primeranota .
+docker run -p 3000:3000 \
+  -e API_KEY="elegí-una-clave-larga" \
+  -e ALLOWED_ORIGIN="https://tu-usuario.github.io" \
+  -v $(pwd)/data:/app/data \
+  primeranota
+```
+
+Con Fly.io (usa el `fly.toml` incluido):
+
+```bash
+fly launch --no-deploy   # solo la primera vez, sin sobreescribir fly.toml
+fly volumes create primeranota_data --size 1
+fly secrets set API_KEY="elegí-una-clave-larga" ALLOWED_ORIGIN="https://tu-usuario.github.io"
+fly deploy
+```
+
+### 2. Frontend en GitHub Pages
+
+1. En GitHub: **Settings → Pages → Build and deployment → Source:
+   GitHub Actions** (activalo una vez, es lo único que no se puede hacer
+   por código).
+2. El workflow `.github/workflows/deploy-pages.yml` ya está en el repo y
+   publica la carpeta `public/` automáticamente en cada push a `main` (o a
+   esta rama). Si trabajaste en una rama que no es `main`, mergeala primero.
+3. Abrí la URL de Pages que te da GitHub (algo como
+   `https://tu-usuario.github.io/PrimeraNota/`). La primera vez te va a
+   pedir la URL del backend y, si configuraste `API_KEY`, la clave — se
+   guardan en el `localStorage` de tu navegador, no en el repo. Podés
+   cambiarlas después desde **Ajustes → Servidor**.
+
+### Uso 100% local (sin desplegar nada)
+
+Si no necesitás acceso remoto, `npm install && npm start` sigue funcionando
+igual que antes: frontend y backend en el mismo origen, sin configurar nada
+de conexión.

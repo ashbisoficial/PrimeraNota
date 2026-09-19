@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', '..', 'data');
 const AUDIO_DIR = path.join(DATA_DIR, 'audio');
 const DB_FILE = path.join(DATA_DIR, 'library.json');
 

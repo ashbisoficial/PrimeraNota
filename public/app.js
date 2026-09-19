@@ -1,11 +1,36 @@
 (() => {
   'use strict';
 
+  // ---------- backend connection (URL + API key live in localStorage,
+  // since the frontend can be static-hosted on a different origin, e.g.
+  // GitHub Pages, than the Node/ffmpeg backend) ----------
+
+  const conn = {
+    base: localStorage.getItem('pn_api_base') || '',
+    key: localStorage.getItem('pn_api_key') || ''
+  };
+
+  function saveConn(base, key) {
+    conn.base = base.replace(/\/+$/, '');
+    conn.key = key || '';
+    localStorage.setItem('pn_api_base', conn.base);
+    localStorage.setItem('pn_api_key', conn.key);
+  }
+
+  function clearConn() {
+    conn.base = '';
+    conn.key = '';
+    localStorage.removeItem('pn_api_base');
+    localStorage.removeItem('pn_api_key');
+  }
+
   // ---------- helpers ----------
 
   async function api(path, opts = {}) {
-    const res = await fetch(path, {
-      headers: { 'Content-Type': 'application/json' },
+    const headers = { 'Content-Type': 'application/json' };
+    if (conn.key) headers['x-api-key'] = conn.key;
+    const res = await fetch(conn.base + path, {
+      headers,
       ...opts,
       body: opts.body ? JSON.stringify(opts.body) : undefined
     });
@@ -13,6 +38,14 @@
     try { data = await res.json(); } catch (_) { /* no body */ }
     if (!res.ok) throw new Error((data && data.error) || `Error ${res.status}`);
     return data;
+  }
+
+  async function fetchBinary(path) {
+    const headers = {};
+    if (conn.key) headers['x-api-key'] = conn.key;
+    const res = await fetch(conn.base + path, { headers });
+    if (!res.ok) throw new Error('No se pudo cargar el audio.');
+    return res.blob();
   }
 
   let toastTimer = null;
@@ -123,9 +156,7 @@
     const btn = document.getElementById('btn-play');
     btn.disabled = true;
     try {
-      const res = await fetch(`/api/game/${currentGame.id}/clip`);
-      if (!res.ok) throw new Error('No se pudo cargar el audio.');
-      const blob = await res.blob();
+      const blob = await fetchBinary(`/api/game/${currentGame.id}/clip`);
       if (currentClipUrl) URL.revokeObjectURL(currentClipUrl);
       currentClipUrl = URL.createObjectURL(blob);
       audioPlayer.src = currentClipUrl;
@@ -407,13 +438,65 @@
     } catch (err) { toast(err.message, true); }
   });
 
+  // ---------- connection banner ----------
+
+  const banner = document.getElementById('connection-banner');
+
+  async function testConnection(base, key) {
+    const headers = key ? { 'x-api-key': key } : {};
+    const res = await fetch(base + '/api/health', { headers });
+    if (!res.ok) throw new Error('No se pudo conectar. Revisá la URL y la API key.');
+  }
+
+  function showBanner() { banner.classList.remove('hidden'); }
+  function hideBanner() { banner.classList.add('hidden'); }
+
+  function updateConnLabel() {
+    const label = document.getElementById('conn-current-url');
+    if (label) label.textContent = conn.base || `${window.location.origin} (mismo servidor)`;
+  }
+
+  document.getElementById('connection-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = document.getElementById('conn-url').value.trim().replace(/\/+$/, '');
+    const key = document.getElementById('conn-key').value.trim();
+    const statusEl = document.getElementById('connection-status');
+    statusEl.textContent = 'Conectando...';
+    try {
+      await testConnection(url, key);
+      saveConn(url, key);
+      statusEl.textContent = '';
+      hideBanner();
+      updateConnLabel();
+      await refreshPlaylists();
+      toast('Conectado ✔');
+    } catch (err) {
+      statusEl.textContent = err.message;
+    }
+  });
+
+  const changeServerBtn = document.getElementById('btn-change-server');
+  if (changeServerBtn) {
+    changeServerBtn.addEventListener('click', () => {
+      document.getElementById('conn-url').value = conn.base;
+      document.getElementById('conn-key').value = conn.key;
+      showBanner();
+      banner.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
   // ---------- init ----------
 
   (async function init() {
     try {
+      await testConnection(conn.base, conn.key);
+      updateConnLabel();
       await refreshPlaylists();
     } catch (err) {
-      toast(err.message, true);
+      const stale = conn.base;
+      if (stale) clearConn(); // stale saved backend, let the user re-enter it
+      document.getElementById('conn-url').value = stale;
+      showBanner();
     }
   })();
 })();

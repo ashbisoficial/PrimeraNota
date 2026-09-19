@@ -232,6 +232,12 @@ main { max-width: 640px; margin: 0 auto; padding: 20px 16px 80px; }
 .playlist-item .songs-check { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
 .playlist-item label { display: flex; gap: 8px; align-items: center; font-size: 0.9rem; }
 
+.connection-banner {
+  max-width: 640px;
+  margin: 20px auto 0;
+}
+.connection-banner .row input { min-width: 200px; }
+
 .toast {
   position: fixed;
   bottom: 20px; left: 50%;
